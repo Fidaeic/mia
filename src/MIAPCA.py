@@ -103,19 +103,19 @@ class PCAMIA():
 #        
 #    def save_image(self):
         
-pca = PCAMIA('../data/pexels-photo-1563356.jpeg')
+pca = PCAMIA('../data/Cubillas.jpg')
 
 pca.read_image()
 
 pca.plot_image()
 
-pca.batchwise(3)
+pca.batchwise(2)
 
 pca.extended_image.shape
 
 pca.reduce(5)
 
-pca.score_map(0)
+pca.score_map(3)
 
-pca.clusters(8)
+pca.clusters(5)
 
