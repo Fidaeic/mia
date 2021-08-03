@@ -10,7 +10,6 @@ import rasterio as rio
 from rasterio.plot import show
 import numpy as np
 import utils
-from statsmodels.multivariate.pca import PCA
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
@@ -66,12 +65,15 @@ class PCAMIA():
     
     def reduce(self, ncomps):
         
-        reduced = PCA(data=self.extended_image, ncomp=ncomps, standardize=True, demean=True, normalize=True, method='nipals')
+        self.scores, self.loadings, self.rsquare = utils.nipals(X=self.extended_image, 
+                               ncomps=ncomps, 
+                               standardize=True, 
+                               demean=True, 
+                               verbose=True,
+                               simplified=True)
 
-        print(reduced.rsquare)
+        print(self.rsquare)
     
-        self.scores, self.loadings = reduced.scores, reduced.loadings
-#        
     def score_map(self, component):
     
         score_plot = np.reshape(self.scores[:, component], newshape=(self.new_rows, self.new_columns))
@@ -84,38 +86,34 @@ class PCAMIA():
 #        
 #    def loadings_plot(self):
         
-    def clusters(self, n_neighbours):
-        knn = KMeans(n_neighbours)
+    def clusters(self, n_clusters):
+        knn = KMeans(n_clusters)
     
         knn.fit(self.scores)
         
         self.clusters_labels = knn.labels_
         
         cluster_map= np.reshape(self.clusters_labels, newshape=(self.new_rows, self.new_columns))
+        
+        cmap = plt.get_cmap("RdBu", n_clusters)
     
-        plt.imshow(cluster_map, interpolation='bilinear', cmap='RdBu')
+        plt.imshow(cluster_map, interpolation='bilinear', cmap=cmap)
         plt.colorbar()
-        plt.title(f"Cluster map with n={n_neighbours}")
+        plt.title(f"Cluster map with n={n_clusters}")
     
         plt.show()
 #        
-#    def scatter_scores(self):
+    def scatter_scores(self, component_1, component_2):
+    
+        plt.scatter(self.scores[:, component_1], self.scores[:, component_2])
+        
+        plt.axhline(color='red')
+        plt.axvline(color='red')
+        
+        plt.title(f"Score plot for components {component_1+1} and {component_2+1}")
+        
+        plt.show()
 #        
 #    def save_image(self):
         
-pca = PCAMIA('../data/Cubillas.jpg')
-
-pca.read_image()
-
-pca.plot_image()
-
-pca.batchwise(2)
-
-pca.extended_image.shape
-
-pca.reduce(5)
-
-pca.score_map(3)
-
-pca.clusters(5)
 
