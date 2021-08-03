@@ -7,50 +7,29 @@ Created on Mon Aug  2 19:23:12 2021
 """
 
 import rasterio as rio
+from rasterio.plot import show
 import numpy as np
-from utils import *
+import utils
+from statsmodels.multivariate.pca import PCA
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+
 
 class PCAMIA():
-    def __init__(self, path_to_directory):
-        
-        
-        self.paths = {"b2" : path_to_directory+'T30SVG_20201030T110211_B02_60m.jp2',
-        "b3" : path_to_directory+'T30SVG_20201030T110211_B03_60m.jp2',
-        "b4" : path_to_directory+'T30SVG_20201030T110211_B04_60m.jp2',
-        "b8" : path_to_directory+'T30SVG_20201030T110211_B8A_60m.jp2',
-        "b9" : path_to_directory+'T30SVG_20201030T110211_B09_60m.jp2',
-        "b11" : path_to_directory+'T30SVG_20201030T110211_B11_60m.jp2',
-        "b12" : path_to_directory+'T30SVG_20201030T110211_B12_60m.jp2',
-        "rgb" : path_to_directory+'T30SVG_20201030T110211_TCI_60m.jp2'}
+    def __init__(self, path_to_image):
+        self.path_to_directory = path_to_image
         
        
-    def get_indices(self):
+    def read_image(self):
         
-        b2 = rio.open(paths_dict['b2']).read(1)[:extension, :extension]
-        b3 = rio.open(paths_dict['b3']).read(1)[:extension, :extension]
-        b4 = rio.open(paths_dict['b4']).read(1)[:extension, :extension]
-        b8 = rio.open(paths_dict['b8']).read(1)[:extension, :extension]
-        b9 = rio.open(paths_dict['b9']).read(1)[:extension, :extension]
-        b11 = rio.open(paths_dict['b11']).read(1)[:extension, :extension]
-        b12 = rio.open(paths_dict['b12']).read(1)[:extension, :extension]
-        rgb = rio.open(paths_dict['rgb']).read()[:, :extension, :extension]
-    
-        ndvi_ar = ndvi(b8, b4)
-        gndvi_ar = gndvi(b8, b3)
-        avi_ar = avi(b8, b4)
-        savi_ar = savi(b8, b4)
-        ndmi_ar = ndmi(b8, b11)
-        msi_ar = msi(b8, b11)
-        gci_ar = gci(b9, b3)
-        nbri_ar = nbri(b8, b12)
-        bsi_ar = bsi(b2, b4, b8, b11)
-        evi_ar = evi(b8, b4, b2)
-        ndwi_ar = ndwi(b8, b3)
-    
-        self.indices_image = np.stack([b2, b3, b4, b8, b9, b11, b12, ndvi_ar, gndvi_ar, avi_ar, \
-                      savi_ar, ndmi_ar, msi_ar, gci_ar, nbri_ar, bsi_ar, evi_ar, ndwi_ar, rgb[0], rgb[1], rgb[2]], axis=2)
+        self.image = rio.open(self.path_to_directory).read()
+        self.rows = self.image.shape[1]
+        self.columns = self.image.shape[2]
         
-
+    def plot_image(self):
+        
+        show(self.image)
+        
     def batchwise(self, neighbours):
         '''
         Generates a new matrix with the newighbouring pixels of every pixel of each band.
@@ -68,13 +47,13 @@ class PCAMIA():
             numpy ndarray with the bands and the neighbouring pixels extended batchwise
         '''
 
-        depth = self.indices_image.shape[2]
+        depth = self.image.shape[0]
         
         final_matrix = np.array([])
         
         for d in range(depth):
             
-            wind = window(self.indices_image[:, :, d], neighbours)
+            wind = utils.window(self.image[d, :, :], neighbours)
             
             if final_matrix.shape[0]==0:
                 final_matrix = wind
@@ -82,15 +61,61 @@ class PCAMIA():
                 final_matrix = np.append(final_matrix, wind, axis=1)
         
         self.extended_image = final_matrix
+        self.new_rows = self.rows-2*neighbours
+        self.new_columns = self.columns-2*neighbours
     
-    def reduce(self):
+    def reduce(self, ncomps):
         
-    def score_map(self):
+        reduced = PCA(data=self.extended_image, ncomp=ncomps, standardize=True, demean=True, normalize=True, method='nipals')
+
+        print(reduced.rsquare)
+    
+        self.scores, self.loadings = reduced.scores, reduced.loadings
+#        
+    def score_map(self, component):
+    
+        score_plot = np.reshape(self.scores[:, component], newshape=(self.new_rows, self.new_columns))
+    
+        plt.imshow(score_plot, interpolation='bilinear', cmap='RdBu')
+        plt.colorbar()
+        plt.title(f"Score map for component {component+1}")
+    
+        plt.show()
+#        
+#    def loadings_plot(self):
         
-    def loadings_plot(self):
+    def clusters(self, n_neighbours):
+        knn = KMeans(n_neighbours)
+    
+        knn.fit(self.scores)
         
-    def scatter_scores(self):
+        self.clusters_labels = knn.labels_
         
-    def save_image(self):
+        cluster_map= np.reshape(self.clusters_labels, newshape=(self.new_rows, self.new_columns))
+    
+        plt.imshow(cluster_map, interpolation='bilinear', cmap='RdBu')
+        plt.colorbar()
+        plt.title(f"Cluster map with n={n_neighbours}")
+    
+        plt.show()
+#        
+#    def scatter_scores(self):
+#        
+#    def save_image(self):
         
-        
+pca = PCAMIA('../data/pexels-photo-1563356.jpeg')
+
+pca.read_image()
+
+pca.plot_image()
+
+pca.batchwise(3)
+
+pca.extended_image.shape
+
+pca.reduce(5)
+
+pca.score_map(0)
+
+pca.clusters(8)
+
