@@ -12,6 +12,7 @@ import numpy as np
 import utils
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+import math
 
 
 class MIAPCA():
@@ -129,29 +130,38 @@ class MIAPCA():
 
         print(self.rsquare)
     
-    def score_map(self, component):
+    def score_map(self):
         '''
-        2D map that represents the scores of the specified principal component. When compared,
+        2D maps that represent the scores of the principal components. When compared,
         score maps of different principal components are very useful for feature extraction
-
-        Parameters
-        ----------
-        component : int
-            Principal component to display.
 
         Returns
         -------
         Matplotlib plot with the score map of the specified component.
 
         '''
-        # Reshape the score column for the specified component to fit the new shape of the image
-        score_plot = np.reshape(self.scores[:, component], newshape=(self.new_rows, self.new_columns))
-    
-        plt.imshow(score_plot, interpolation='bilinear', cmap='RdBu')
-        plt.colorbar()
-        plt.title(f"Score map for component {component+1}")
-    
-        plt.show()
+        # Gets the number of required columns for the subplot
+        n_columns = math.ceil(self.scores.shape[1]/2)
+        
+        # Generation of subplots based on the number of columns
+        fig, axs = plt.subplots(n_columns, 2, figsize=(20,15))
+        
+        # Check if the number of components is an odd number. If so, delete
+        # the last image
+        if self.scores.shape[1] % 2 != 0:
+            fig.delaxes(axs[-1,-1])
+        
+        fig.subplots_adjust(hspace = .5, wspace=.1)
+        axs = axs.ravel()
+        
+        # Generate a score map for each component 
+        for i in range(self.scores.shape[1]):
+            score_plot = np.reshape(self.scores[:, i], newshape=(self.new_rows, self.new_columns))
+        
+            im = axs[i].imshow(score_plot, interpolation='bilinear', cmap='RdBu')
+            axs[i].set_title(f"Component {i+1}", fontsize=14)
+        
+            fig.colorbar(im, ax=axs[i])
 #        
 #    def loadings_plot(self):
         
@@ -190,7 +200,7 @@ class MIAPCA():
         plt.title(f"Cluster map with n={n_clusters}")
     
         plt.show()
-#        
+        
     def scatter_scores(self, component_1, component_2):
         '''
         Creates a scatter plot to compare the score of two components. May be useful
