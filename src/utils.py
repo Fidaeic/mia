@@ -8,40 +8,6 @@ Created on Sat Mar 27 16:11:09 2021
 import numpy as np
 from numpy import linalg as LA
 
-def ndvi(b8, b4):
-    return (b8-b4)/(b8+b4)
-
-def gndvi(b8, b3):
-    return (b8-b3)/(b3+b8)
-
-def avi(b8, b4):
-    return (b8*(1-b4)*(b8-b4))**(1/3)
-
-def savi(b8, b4):
-    return (b8-b4)/((b8+b4+0.428)*1.428)
-
-def ndmi(b8, b11):
-    return (b8-b11)/(b8+b11)
-
-def msi(b8, b11):
-    return b11/b8
-
-def gci(b9, b3):
-    return (b9/b3)-1
-
-def nbri(b8, b12):
-    return (b8-b12)/(b8+b12)
-
-def bsi(b2, b4, b8, b11):
-    return ((b11+b4)-(b8+b2))/((b11+b4)+(b8+b2))
-
-def evi(b8, b4, b2):
-    return 2.5*((b8-b4)/(b8+6*b4-7.5*b2+1))
-
-def ndwi(b8, b3):
-    return (b3-b8)/(b3+b8)
-
-
 def window(X, neighbours):
     '''
     Gets the neighbouring pixels of every pixel of the image. The window size determines
@@ -83,76 +49,73 @@ def window(X, neighbours):
 
     return new_matrix
 
-def nipals(X, ncomps, threshold=1e-5, demean=True, standardize=True, verbose=True, max_iterations=10000, simplified=True):
-  
-    X_pca = X.copy()
+def norm(x):
+    return np.sqrt(np.sum(x * x))
+
+def nipals(X, ncomps, threshold=1e-4, demean=True, standardize=True, verbose=True, max_iterations=1000000, simplified=True):
 
     if demean:
         mean = np.mean(X, axis=0)
-        X_pca = X_pca-mean[None, :]
-        
+        X = X-mean[None, :]
+
     if standardize:
         std = np.std(X, axis=0)
-        X_pca = X_pca/std[None, :]
+        X = X/std[None, :]
 
+    tss = np.sum(X**2)
 
-    tss = np.sum(X_pca**2)
-    
-    r2 = []
-    explained_variance = []
-    T = np.zeros(shape=(ncomps, X_pca.shape[0]))
-    P_t = np.zeros(shape = (ncomps, X_pca.shape[1]))
-    eigenvalues= np.zeros(ncomps)
-
+    cont=0
     for i in range(ncomps):
-        # We get the column with the maximum variance in the matrix
-        var = np.var(X_pca, axis=0)
-        pos = np.where(max(var))[0]
-        
-        # That column will be the one we will start with
-        t = np.array(X_pca[:,pos])
-        t.shape=(X_pca.shape[0], 1) #Esto sirve para obligar a que t sea un vector columna
-    
-        cont=0
+        # We start with the column that has the highest variance of the dataset. Therefore, we first check
+        # which column has the highest variance
+        var = np.var(X, axis=0)
+        pos = np.argmax(var)
+
+        # We select said column and assign it to t
+        t = np.array(X[:,pos])
+        t.shape=(X.shape[0], 1) #Esto sirve para obligar a que t sea un vector columna
+
         comprobacion = 1
-        # while conv <X_pca.shape[0] and cont<10000:
+
         while comprobacion>threshold and cont<max_iterations:
-            
-            #Definimos un vector llamado t_previo, que es con el que vamos a empezar el algoritmo
-            t_previo = t
-            p_t = (np.transpose(t_previo).dot(X_pca))/(np.transpose(t_previo).dot(t_previo))
+
+            # Save a copy of t and compute the loadings vector for the component
+            t_previo = t.copy()
+            p_t = (np.transpose(t_previo).dot(X))/(np.transpose(t_previo).dot(t_previo))
+
+            # Normalize the loadings vector of the component
             p_t = p_t/LA.norm(p_t)
-            
-            t=X_pca.dot(np.transpose(p_t))
-            
-            #Comparamos el t calcular con el t_previo, de manera que lo que buscamos es que la diferencia sea menor
-            #que el criterio de parada establecido. Para ello, hacemos una prueba lógica y sumamos todos los valores
-            #donde sea verdad. Si es verdad en todos, el algoritmo ha convergido
-            
-            t_sum = np.sum(t**2)
-            t_previo_sum = np.sum(t_previo**2)
-            
-            comprobacion = np.abs(np.sqrt(t_sum-t_previo_sum))
-            
+
+            # Recompute the vector of scores t
+            t = X.dot(np.transpose(p_t))
+
+            # Convergence criterion: Difference of sum of squares smaller than threshold
+            comprobacion = norm(t-t_previo)/norm(t)
+
             cont+=1
 
-        #Calculamos la matriz de residuos y se la asignamos a X para calcular la siguiente componente
-        E = X_pca-t.dot(p_t)
-        r2.append(1-np.sum(E**2)/tss)
-        explained_variance.append(r2[i] - r2[i-1]) if i!=0 else explained_variance.append(r2[i])
-        X_pca = E
-        
-        #Asignamos los vectores t y p a su posición en las matrices de scores y loadings
-        eigenvalues[i] = np.var(t)
-        
-        T[i]=t.reshape((X.shape[0]))
-        P_t[i]=p_t
-        
-    if verbose:
-        print(f"Algorithm converged in {cont} iterations")
-    T = np.transpose(T)
+        # Computation of the error and the residual sum of squares       
+        X -= t.dot(p_t)
+        rss = np.sum(X**2) #Residual Sum of Squares
+
+        # X is now the error matrix
+        if i==0:
+            T = t
+            P_t = p_t
+            r2 = [1-rss/tss]
+            explained_variance = r2.copy()
+        else:
+            T = np.append(T, t, axis=1)
+            P_t = np.append(P_t, p_t, axis=0)
+            r2.append(1-rss/tss)
+            explained_variance.append(r2[i] - r2[i-1])
+
+        if verbose:
+            print(f"Comp {i} converged in {cont} iterations")
+    
+    eigenvalues = np.var(T, axis=0)
 
     if simplified:
         return T, P_t, r2
 
-    return T, P_t, E, r2, explained_variance, eigenvalues
+    return T, P_t, X, r2, explained_variance, eigenvalues
