@@ -76,6 +76,7 @@ class MIAPCA():
             numpy ndarray with the bands and the neighbouring pixels extended batchwise
         '''
 
+        self.neighbours = neighbours
         # Get the number of bands of the image
         depth = self.image.shape[0]
         
@@ -187,13 +188,21 @@ class MIAPCA():
         fig.subplots_adjust(hspace = .5, wspace=.1)
         axs = axs.ravel()
 
+        window_size = (2*self.neighbours + 1)**2
+        vertical_coords = [coord-0.5 for coord in range(1, self.loadings.shape[1]) if coord % window_size==0]
+
         # Generate a score map for each component 
         for i in range(self.loadings.shape[0]):
 
-            plot = axs[i].bar(x=list(range(self.loadings.shape[1])), height=self.loadings[i, :])
+            component_loadings = self.loadings[i, :]
+            y_min = np.minimum(0, np.min(component_loadings))
+            y_max = np.max(component_loadings)
+
+            axs[i].bar(x=list(range(self.loadings.shape[1])), height=component_loadings)
+
+            axs[i].vlines(vertical_coords, ymin=y_min, ymax=y_max, linestyle='--', color='red')
+
             axs[i].set_title(f"Loadings for component {i}")
-
-
         
     def clusters(self, n_clusters):
         '''
