@@ -11,6 +11,7 @@ from rasterio.plot import show
 import numpy as np
 import utils
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from sklearn.cluster import KMeans
 import math
 
@@ -171,7 +172,7 @@ class MIAPCA():
 
         Returns
         -------
-        Matplotlib plot with the score map of the specified component.
+        Matplotlib plot with the bar plots of the principal components.
 
         '''
         # Gets the number of required columns for the subplot
@@ -203,6 +204,23 @@ class MIAPCA():
             axs[i].vlines(vertical_coords, ymin=y_min, ymax=y_max, linestyle='--', color='red')
 
             axs[i].set_title(f"Loadings for component {i}")
+
+
+    def show_mask(self, mask, alpha=.5):
+        score_plot = np.reshape(mask, newshape=(self.new_rows, self.new_columns))
+
+        # fig, ax =  plt.subplots(figsize=(20, 10))
+
+        image = mpimg.imread(self.path_to_directory)
+        plt.imshow(image)
+        plt.imshow(score_plot, cmap=plt.get_cmap('binary'), alpha=alpha)
+        
+        # fig.colorbar(im, ax=ax)
+        plt.title("Dummy image for the selected features")
+
+        plt.show()
+
+
         
     def clusters(self, n_clusters):
         '''
