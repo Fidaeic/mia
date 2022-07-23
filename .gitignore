@@ -21,6 +21,7 @@ parts/
 sdist/
 var/
 data/
+mia/
 wheels/
 share/python-wheels/
 *.egg-info/

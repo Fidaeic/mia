@@ -163,7 +163,37 @@ class MIAPCA():
         
             fig.colorbar(im, ax=axs[i])
 #        
-#    def loadings_plot(self):
+    def loadings_plot(self):
+        '''
+        barplots that represent the loadings of the principal components. When compared,
+        score maps of different principal components are very useful for feature extraction
+
+        Returns
+        -------
+        Matplotlib plot with the score map of the specified component.
+
+        '''
+        # Gets the number of required columns for the subplot
+        n_rows = math.ceil(self.loadings.shape[0]/2)
+
+        # Generation of subplots based on the number of columns
+        fig, axs = plt.subplots(n_rows, 2, figsize=(20,15))
+
+        # Check if the number of components is an odd number. If so, delete
+        # the last image
+        if self.loadings.shape[0] % 2 != 0:
+            fig.delaxes(axs[-1,-1])
+
+        fig.subplots_adjust(hspace = .5, wspace=.1)
+        axs = axs.ravel()
+
+        # Generate a score map for each component 
+        for i in range(self.loadings.shape[0]):
+
+            plot = axs[i].bar(x=list(range(self.loadings.shape[1])), height=self.loadings[i, :])
+            axs[i].set_title(f"Loadings for component {i}")
+
+
         
     def clusters(self, n_clusters):
         '''
