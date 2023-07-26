@@ -108,29 +108,16 @@ class MIAPCA():
         '''
 
         self.neighbours = neighbours
+        self.window_width = neighbours+2
 
         try:
 
+            final_size = np.sum(np.square(np.arange(3, self.window_width+1)))
+
             final_matrix = np.concatenate(
-                [np.lib.stride_tricks.sliding_window_view(self.image[band], window_shape=(3,3)).reshape(-1, 3**2) 
+                [np.lib.stride_tricks.sliding_window_view(self.image[band], 
+                                                          window_shape=(self.window_width, self.window_width)).reshape(-1, final_size) 
                     for band in range(self.image.shape[0])], axis=1)
-            # Get the number of bands of the image
-            # depth = self.image.shape[0]
-            
-            # Create an empty array that will contain the original image extended batchwise
-            
-            # final_matrix = np.array([])
-            
-            # for d in range(depth):
-                
-            #     # Apply the window function to each band of the original image
-            #     wind = utils.window(self.image[d, :, :], neighbours)
-                
-            #     # Append the extended band to the final matrix
-            #     if final_matrix.shape[0]==0:
-            #         final_matrix = wind
-            #     else:
-            #         final_matrix = np.append(final_matrix, wind, axis=1)
             
             self.extended_image = final_matrix
             self.new_rows = self.rows-2*neighbours
