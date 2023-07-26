@@ -57,6 +57,17 @@ class MIAPCA():
         try:
         
             self.image = rio.open(self.path_to_directory).read()
+
+            droppable_bands = []
+            for band in range(self.image.shape[0]):
+                if np.min(self.image[band])==np.max(self.image[band]):
+
+                    droppable_bands.append(band)
+                
+            keep_bands = [x for x in list(range(self.image.shape[0])) if x not in droppable_bands]
+            self.image = self.image[keep_bands, :, :]
+
+
             self.rows = self.image.shape[1]
             self.columns = self.image.shape[2]
 
@@ -99,23 +110,27 @@ class MIAPCA():
         self.neighbours = neighbours
 
         try:
+
+            final_matrix = np.concatenate(
+                [np.lib.stride_tricks.sliding_window_view(self.image[band], window_shape=(3,3)).reshape(-1, 3**2) 
+                    for band in range(self.image.shape[0])], axis=1)
             # Get the number of bands of the image
-            depth = self.image.shape[0]
+            # depth = self.image.shape[0]
             
             # Create an empty array that will contain the original image extended batchwise
             
-            final_matrix = np.array([])
+            # final_matrix = np.array([])
             
-            for d in range(depth):
+            # for d in range(depth):
                 
-                # Apply the window function to each band of the original image
-                wind = utils.window(self.image[d, :, :], neighbours)
+            #     # Apply the window function to each band of the original image
+            #     wind = utils.window(self.image[d, :, :], neighbours)
                 
-                # Append the extended band to the final matrix
-                if final_matrix.shape[0]==0:
-                    final_matrix = wind
-                else:
-                    final_matrix = np.append(final_matrix, wind, axis=1)
+            #     # Append the extended band to the final matrix
+            #     if final_matrix.shape[0]==0:
+            #         final_matrix = wind
+            #     else:
+            #         final_matrix = np.append(final_matrix, wind, axis=1)
             
             self.extended_image = final_matrix
             self.new_rows = self.rows-2*neighbours
