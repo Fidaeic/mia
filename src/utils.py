@@ -8,43 +8,22 @@ Created on Sat Mar 27 16:11:09 2021
 import numpy as np
 from numpy import linalg as LA
 
-def window(X, neighbours):
-    '''
-    Gets the neighbouring pixels of every pixel of the image. The window size determines
-    how big is the neighbourhood of the pixel, and its given by the following expression:
-            window_size = (2*n+1)**2
-    being n the number of neighbours
-
-    Parameters
-    ----------
-    neighbours : int
-        Integer defining how many neighbours should be considered to build the matrix
-
-    Returns
-    -------
-    new_matrix : numpy ndarray
-        2d matrix containing the neighbouring pixels .
-
-    '''
-    # Get the number of rows and columns of the new image. We must subtract
-    # as many neighbours as introduced as a parameter
-    nrows = X.shape[0]-2*neighbours
-    ncols = X.shape[1]-2*neighbours
+from exceptions import CustomException
+from rasterio.plot import show
 
 
-    window_size = (2*neighbours + 1)**2
+def plot_image(image):
+        '''
+        Plots original image
 
-    new_matrix = np.empty(shape=(nrows*ncols, window_size))
-    p = 0
-    for i in range(neighbours, X.shape[0]-neighbours):
-        for j in range(neighbours, X.shape[1]-neighbours):
+        Returns
+        -------
+        RGB image.
 
-            mask = X[i-neighbours: i+neighbours+1, j-neighbours:j+neighbours+1]
+        '''
+        
+        try:
+            show(image)
 
-            vector = np.reshape(mask, newshape=mask.shape[0]*mask.shape[1])
-
-            new_matrix[p, :] = vector
-
-            p+=1
-
-    return new_matrix
+        except Exception as e:
+            raise CustomException(e, sys)
