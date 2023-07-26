@@ -8,11 +8,13 @@ from exceptions import CustomException
 from logger import logging
 import os
 from utils import save_object
+from PIL import Image
+from numpy import savez_compressed
 
 @dataclass
 class DataTransformationConfig:
     preprocessor_obj_file_path=os.path.join('artifacts', 'preprocessor.pkl')
-    processed_image_file_path=os.path.join('artifacts', 'processed_image.npy')
+    processed_image_file_path=os.path.join('artifacts/processed', 'processed_image.npy')
 
 class DataTransformation:
 
@@ -69,7 +71,6 @@ class DataTransformation:
             )
 
             logging.info("Preprocessor object saved")
-
 
             np.save(self.data_transformation_config.processed_image_file_path, processed_matrix)
 
