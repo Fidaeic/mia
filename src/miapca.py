@@ -146,7 +146,7 @@ class MIAPCA():
 
         '''
 
-        if self.extended_image==None:
+        if self.extended_image is None:
             raise CustomException("No batchwise image has been generated. Please apply the batchwise() method", sys)
 
         try:
@@ -157,7 +157,7 @@ class MIAPCA():
 
             self.pca_object = PCA(n_components=self.ncomps)
 
-            self.scores = self.pca_object.fit_transform(self._X_scaled)
+            self.scores = self.pca_object.fit_transform(self.X_scaled)
 
             self.loadings = self.pca_object.components_
 
@@ -167,9 +167,9 @@ class MIAPCA():
 
             self.eigenvals = self.pca_object.singular_values_**2
 
-            self.component_variance = np.var(self._scores, axis=0)
+            self.component_variance = np.var(self.scores, axis=0)
 
-            self.reconstructed_training_X, self.residuals, _ = self.reconstruct(self.X)
+            self.reconstructed_training_X, self.residuals, _ = self.reconstruct(self.extended_image)
 
             # Save the PCA object after training
             pk.dump(self.pca_object, open("../artifacts/pca.pkl", "wb"))
@@ -266,6 +266,7 @@ class MIAPCA():
                 axs[i].set_title(f"Component {i+1}", fontsize=14)
             
                 fig.colorbar(im, ax=axs[i])
+                plt.tight_layout()
 
         except Exception as e:
             raise CustomException(e, sys)
