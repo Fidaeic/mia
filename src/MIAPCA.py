@@ -3,7 +3,7 @@
 """
 Created on Mon Aug  2 19:23:12 2021
 
-@author: fidae
+@author: fidae el morer
 """
 
 import rasterio as rio
@@ -12,9 +12,12 @@ import numpy as np
 import utils
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from sklearn.cluster import KMeans
+
 import math
 
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 class MIAPCA():
     def __init__(self, path_to_image):
